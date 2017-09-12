@@ -1,3 +1,6 @@
+"""
+Run collaborative filtering on sample data
+"""
 import pandas as pd
 import numpy as np
 import csv
@@ -5,7 +8,7 @@ import csv
 # --- Read Data --- #
 #header=['viewer_id','media_id','publisher_category','watched_pct']
 header=['viewer_id', 'media_id']
-df = pd.read_csv('jw_player_play_data.csv', low_memory=False)
+df = pd.read_csv('player_play_data.csv', low_memory=False)
 
 n_users=df['viewer_id'].unique().shape[0]
 n_items=df['media_id'].unique().shape[0]
@@ -25,18 +28,18 @@ print len(publisher_list)
 print publisher_list
 
 print df.tail()
-
+# user-user collaborative filtering in each publisher category
 for publisher in publisher_list[9:10]:
     viewer_subset=df.loc[df['publisher_category'] == publisher]
     #viewer_subset=viewer_subset[:100000]
     print publisher
     print 'Number of viewers: '+ str(len(viewer_subset['viewer_id'].unique()))
     print 'Number of media: '+ str(len(viewer_subset['media_id'].unique()))
-
+    # clean up data
     zero_data = np.zeros(shape=(len(viewer_subset['viewer_id'].unique()),len(viewer_subset['media_id'].unique())));
     df = pd.DataFrame(zero_data, columns=(viewer_subset['media_id'].unique()))
     df=df.set_index(viewer_subset['viewer_id'].unique())
-
+    # construct similarity matrix
     userItemMatrix={};
     for [iv,viewer] in enumerate(viewer_subset['viewer_id'].unique()):
         v_current=viewer_subset.loc[viewer_subset['viewer_id'] == viewer]
@@ -61,7 +64,7 @@ for publisher in publisher_list[9:10]:
             df.loc[viewer,k]=viewengagement[k]/100.0;
 
     data_sims_temp=df.ix[:,:]
-
+    
     from sklearn import cross_validation as cv
     train_data, test_data = cv.train_test_split(data_sims_temp, test_size=0.25)
 
@@ -72,7 +75,7 @@ for publisher in publisher_list[9:10]:
     from sklearn.metrics.pairwise import pairwise_distances
     user_similarity = pairwise_distances(train_data_matrix, metric='cosine')
         #print user_similarity
-
+    # predict user similarity for the users in test set
     #print user_similarity[:4, :4]
     def predict(ratings, similarity, type='user'):
         if type == 'user':
@@ -82,11 +85,11 @@ for publisher in publisher_list[9:10]:
             pred = mean_user_rating[:, np.newaxis] + similarity.dot(ratings_diff) / np.array([np.abs(similarity).sum(axis=1)]).T
             return pred
 
-
+    
     user_prediction = predict(train_data_matrix, user_similarity, type='user')
 
     print user_prediction
-
+    # Find prediction error: RMSE
     from sklearn.metrics import mean_squared_error
     from math import sqrt
     def rmse(prediction, ground_truth):
