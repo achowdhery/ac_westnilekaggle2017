@@ -1,3 +1,8 @@
+'''
+    This code gets a ROC AUC score (local 4-fold validation)
+    in the Kaggle Nile virus prediction challenge.
+    Classifier used is Random Forest classifier
+'''
 import numpy as np
 import csv
 
@@ -11,15 +16,10 @@ from sklearn import metrics
 from sklearn.cross_validation import KFold
 from sklearn.preprocessing import StandardScaler
 
-'''
-    This demonstrates how to reach a 0.80 ROC AUC score (local 4-fold validation)
-    in the Kaggle Nile virus prediction challenge.
 
-    The model trains in a few seconds on CPU.
-'''
 
-# let's define some utils
-
+# let's define some utility functions
+# parse weather data
 def get_weather_data():
     weather_dic = {}
     fi = csv.reader(open("weather.csv"))
@@ -31,6 +31,7 @@ def get_weather_data():
     weather_indexes = dict([(weather_head[i], i) for i in range(len(weather_head))])
     return weather_dic, weather_indexes
 
+# process each line in other data
 def process_line(line, indexes, weather_dic, weather_indexes):
     def get(name):
         return line[indexes[name]]
@@ -49,6 +50,7 @@ def process_line(line, indexes, weather_dic, weather_indexes):
 
     return [month, week, latitude, longitude, tmax, tmin, tavg, dewpoint, wetbulb, pressure]
 
+# preprocess data - normalize
 def preprocess_data(X, scaler=None):
     if not scaler:
         scaler = StandardScaler()
@@ -56,6 +58,7 @@ def preprocess_data(X, scaler=None):
     X = scaler.transform(X)
     return X, scaler
 
+# shuffle the rows
 def shuffle(X, y, seed=1337):
     np.random.seed(seed)
     shuffle = np.arange(len(y))
@@ -67,7 +70,7 @@ def shuffle(X, y, seed=1337):
 
 
 
-# now the actual script
+# now the data processing script
 
 print("Processing training data...")
 
